@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- astronomy_v1_galaxy.yaml
+- astronomy_v1_planet.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

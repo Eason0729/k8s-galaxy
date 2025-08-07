@@ -1,0 +1,9 @@
+apiVersion: astronomy.galaxy.kubesphere.io/v1
+kind: Galaxy
+metadata:
+  labels:
+    app.kubernetes.io/name: galaxy
+    app.kubernetes.io/managed-by: kustomize
+  name: galaxy-sample
+spec:
+  # TODO(user): Add fields here
