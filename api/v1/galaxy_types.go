@@ -20,45 +20,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// GalaxySpec defines the desired state of Galaxy
-type GalaxySpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	// The following markers will use OpenAPI v3 schema to validate the value
-	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
-
-	// foo is an example field of Galaxy. Edit galaxy_types.go to remove/update
-	// +optional
-	Foo *string `json:"foo,omitempty"`
+type GalaxyPlanetSpec struct {
+	Name       string   `json:"name,omitempty"`
+	DiameterKm float64  `json:"diameterKm,omitempty"`
+	HasLife    bool     `json:"hasLife,omitempty"`
+	Moons      []string `json:"moons,omitempty"`
 }
 
-// GalaxyStatus defines the observed state of Galaxy.
-type GalaxyStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+type GalaxySpec struct {
+	Name    string             `json:"name,omitempty"`
+	Planets []GalaxyPlanetSpec `json:"planets,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster,path=galaxies,shortName=galaxy
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Galaxy is the Schema for the galaxies API
 type Galaxy struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// metadata is a standard object metadata
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
-
-	// spec defines the desired state of Galaxy
-	// +required
-	Spec GalaxySpec `json:"spec"`
-
-	// status defines the observed state of Galaxy
-	// +optional
-	Status GalaxyStatus `json:"status,omitempty,omitzero"`
+	Spec GalaxySpec `json:"spec,omitempty"`
 }
 
 // +kubebuilder:object:root=true

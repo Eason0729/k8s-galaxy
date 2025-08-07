@@ -20,45 +20,31 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+const PlanetGalaxyLabel = "kubesphere.io/galaxy"
 
 // PlanetSpec defines the desired state of Planet
 type PlanetSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	// The following markers will use OpenAPI v3 schema to validate the value
-	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
-
-	// foo is an example field of Planet. Edit planet_types.go to remove/update
-	// +optional
-	Foo *string `json:"foo,omitempty"`
-}
-
-// PlanetStatus defines the observed state of Planet.
-type PlanetStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Name of the planet
+	Name string `json:"name,omitempty"`
+	// Diameter in kilometers
+	DiameterKm float64 `json:"diameterKm,omitempty"`
+	// Does the planet support life?
+	HasLife bool `json:"hasLife,omitempty"`
+	// List of moons
+	Moons []string `json:"moons,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster,path=planets,shortName=planet
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Planet is the Schema for the planets API
+// Label: kubesphere.io/galaxy - references the GalaxySpec
 type Planet struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// metadata is a standard object metadata
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
-
-	// spec defines the desired state of Planet
-	// +required
-	Spec PlanetSpec `json:"spec"`
-
-	// status defines the observed state of Planet
-	// +optional
-	Status PlanetStatus `json:"status,omitempty,omitzero"`
+	Spec PlanetSpec `json:"spec,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -72,4 +58,11 @@ type PlanetList struct {
 
 func init() {
 	SchemeBuilder.Register(&Planet{}, &PlanetList{})
+}
+
+func (in *Planet) GetGalaxy() string {
+	if in.Labels == nil {
+		return ""
+	}
+	return in.Labels[PlanetGalaxyLabel]
 }

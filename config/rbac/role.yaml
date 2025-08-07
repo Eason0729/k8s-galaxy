@@ -1,11 +1,35 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  labels:
-    app.kubernetes.io/name: galaxy
-    app.kubernetes.io/managed-by: kustomize
   name: manager-role
 rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - astronomy.galaxy.kubesphere.io
+  resources:
+  - galaxies
+  - planets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - astronomy.galaxy.kubesphere.io
+  resources:
+  - galaxies/finalizers
+  - planets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - astronomy.galaxy.kubesphere.io
+  resources:
+  - galaxies/status
+  - planets/status
+  verbs:
+  - get
+  - patch
+  - update
