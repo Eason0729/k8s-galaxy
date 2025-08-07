@@ -6,7 +6,7 @@ spec:
   name: Milky Way
   planets:
     - name: earth
-      diameterKm: 12742
+      diameterKm: 12743
       hasLife: false
       moons:
         - Moon

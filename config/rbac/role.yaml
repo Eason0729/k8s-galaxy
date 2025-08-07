@@ -7,7 +7,6 @@ rules:
 - apiGroups:
   - astronomy.galaxy.kubesphere.io
   resources:
-  - galaxies
   - planets
   verbs:
   - create
@@ -20,14 +19,12 @@ rules:
 - apiGroups:
   - astronomy.galaxy.kubesphere.io
   resources:
-  - galaxies/finalizers
   - planets/finalizers
   verbs:
   - update
 - apiGroups:
   - astronomy.galaxy.kubesphere.io
   resources:
-  - galaxies/status
   - planets/status
   verbs:
   - get

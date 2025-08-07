@@ -19,14 +19,17 @@ package controller
 import (
 	"context"
 	"fmt"
+	"reflect"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
 	v1 "kubesphere.io/galaxy/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // GalaxyReconciler reconciles a Galaxy object
@@ -36,21 +39,10 @@ type GalaxyReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=astronomy.galaxy.kubesphere.io,resources=galaxies,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=astronomy.galaxy.kubesphere.io,resources=galaxies/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=astronomy.galaxy.kubesphere.io,resources=galaxies/finalizers,verbs=update
-
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Galaxy object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.21.0/pkg/reconcile
 func (r *GalaxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = logf.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	galaxy := &v1.Galaxy{}
 	if err := r.Client.Get(ctx, req.NamespacedName, galaxy); err != nil {
@@ -58,19 +50,51 @@ func (r *GalaxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	for _, galaxyPlanetSpec := range galaxy.Spec.Planets {
-		planet := &v1.Planet{
+		planetName := fmt.Sprintf("%s-%s", galaxy.Name, galaxyPlanetSpec.Name)
+		desired := &v1.Planet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s", galaxy.Name, galaxyPlanetSpec.Name),
+				Name:      planetName,
 				Namespace: galaxy.Namespace,
 			},
 			Spec: galaxyPlanetSpec.ToPlanetSpec(),
 		}
 
-		if err := r.Client.Update(ctx, planet); err == nil {
+		if err := controllerutil.SetControllerReference(galaxy, desired, r.Scheme); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		current := &v1.Planet{}
+		err := r.Client.Get(ctx, client.ObjectKey{Name: planetName, Namespace: galaxy.Namespace}, current)
+		if errors.IsNotFound(err) {
+			if err := r.Client.Create(ctx, desired); err != nil && !errors.IsAlreadyExists(err) {
+				return ctrl.Result{}, err
+			}
 			continue
 		}
-		if err := r.Client.Create(ctx, planet); err != nil {
-			return ctrl.Result{}, client.IgnoreAlreadyExists(err)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		needsUpdate := false
+
+		if !reflect.DeepEqual(current.Spec, desired.Spec) {
+			current.Spec = desired.Spec
+			needsUpdate = true
+		}
+
+		// Find old version(not garbage-collected correctly), and mark reference
+		if !metav1.IsControlledBy(current, galaxy) {
+			if err := controllerutil.SetControllerReference(galaxy, current, r.Scheme); err != nil {
+				return ctrl.Result{}, err
+			}
+			needsUpdate = true
+		}
+
+		if needsUpdate {
+			if err := r.Client.Update(ctx, current); err != nil {
+				return ctrl.Result{}, err
+			}
+			log.V(1).Info("Updated Planet to match Galaxy spec", "planet", planetName)
 		}
 	}
 
