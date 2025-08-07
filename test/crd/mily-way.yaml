@@ -1,0 +1,12 @@
+apiVersion: astronomy.galaxy.kubesphere.io/v1
+kind: Galaxy
+metadata:
+  name: milky-way
+spec:
+  name: Milky Way
+  planets:
+    - name: earth
+      diameterKm: 12742
+      hasLife: false
+      moons:
+        - Moon
