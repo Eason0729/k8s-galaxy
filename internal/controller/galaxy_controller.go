@@ -39,6 +39,11 @@ type GalaxyReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+// +kubebuilder:rbac:groups=astronomy.galaxy.kubesphere.io,resources=galaxies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=astronomy.galaxy.kubesphere.io,resources=galaxies/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=astronomy.galaxy.kubesphere.io,resources=galaxies/finalizers,verbs=update
+// +kubebuilder:rbac:groups=astronomy.galaxy.kubesphere.io,resources=planets,verbs=get;list;watch;create;update;patch;delete
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *GalaxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
