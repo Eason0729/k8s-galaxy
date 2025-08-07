@@ -56,3 +56,13 @@ type GalaxyList struct {
 func init() {
 	SchemeBuilder.Register(&Galaxy{}, &GalaxyList{})
 }
+
+func (in *GalaxyPlanetSpec) ToPlanetSpec() PlanetSpec {
+	spec := PlanetSpec{
+		Name:       in.Name,
+		DiameterKm: in.DiameterKm,
+		HasLife:    in.HasLife,
+		Moons:      in.Moons,
+	}
+	return spec
+}

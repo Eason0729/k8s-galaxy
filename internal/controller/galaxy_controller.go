@@ -18,20 +18,19 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "kubesphere.io/galaxy/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	v1 "kubesphere.io/galaxy/api/v1"
-
-	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // GalaxyReconciler reconciles a Galaxy object
+// It generate planets corresponding to galaxy when galaxy is created or updated
 type GalaxyReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -53,32 +52,22 @@ type GalaxyReconciler struct {
 func (r *GalaxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = logf.FromContext(ctx)
 
-	planet := &v1.Planet{}
-	if err := r.Client.Get(ctx, req.NamespacedName, planet); err != nil {
+	galaxy := &v1.Galaxy{}
+	if err := r.Client.Get(ctx, req.NamespacedName, galaxy); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	galaxy := &v1.Galaxy{}
-	if err := r.Client.Get(ctx, types.NamespacedName{
-		Name:      planet.GetGalaxy(),
-		Namespace: req.Namespace,
-	}, galaxy); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	for _, item := range galaxy.Spec.Planets {
-		if item.Name != planet.Name {
-			continue
+	for _, galaxyPlanetSpec := range galaxy.Spec.Planets {
+		planet := &v1.Planet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-%s", galaxy.Name, galaxyPlanetSpec.Name),
+				Namespace: galaxy.Namespace,
+			},
+			Spec: galaxyPlanetSpec.ToPlanetSpec(),
 		}
-		planet.Spec = v2.PlanetSpec{
-			Name:       item.Name,
-			DiameterKm: item.DiameterKm,
-			HasLife:    item.HasLife,
+		if err := r.Client.Create(ctx, planet); err != nil {
+			return ctrl.Result{}, client.IgnoreAlreadyExists(err)
 		}
-	}
-
-	if err := r.Update(ctx, planet); err != nil {
-		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -87,7 +76,7 @@ func (r *GalaxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *GalaxyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&astronomyv1.Galaxy{}).
+		For(&v1.Galaxy{}).
 		Named("galaxy").
 		Complete(r)
 }
