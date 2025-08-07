@@ -65,7 +65,10 @@ func (r *GalaxyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			},
 			Spec: galaxyPlanetSpec.ToPlanetSpec(),
 		}
-		if err := r.Client.Create(ctx, planet); err != nil {
+		if err := r.Client.Create(ctx, planet); err == nil {
+			continue
+		}
+		if err := r.Client.Update(ctx, planet); err != nil {
 			return ctrl.Result{}, client.IgnoreAlreadyExists(err)
 		}
 	}
